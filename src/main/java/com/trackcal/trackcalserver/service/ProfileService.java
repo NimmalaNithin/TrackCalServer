@@ -63,11 +63,11 @@ public class ProfileService {
         profile.setWeightKg(request.getWeightKg());
         profile.setTargetWeightKg(request.getTargetWeightKg());
         profile.setActivityLevel(request.getActivityLevel());
-        profile.setGoal(request.getGoal());
+        profile.setGoal(inferGoal(request));
         profile.setTargetStrategy(request.getTargetStrategy());
         profile.setTargetDate(request.getTargetDate());
         profile.setDaysToTarget(resolveDaysToTarget(request));
-        profile.setDailyDeficit(targets.dailyDeficit());
+        profile.setDailyCalorieAdjustment(targets.dailyCalorieAdjustment());
         profile.setMaintenanceCalories(targets.maintenanceCalories());
         profile.setCalorieTarget(targets.calories());
         profile.setProteinTarget(targets.protein());
@@ -89,34 +89,54 @@ public class ProfileService {
             default -> 1.2;
         };
         int maintenanceCalories = (int) Math.round(bmr * multiplier);
-        int dailyDeficit = calculateDailyDeficit(request);
-        int calories = Math.max(1200, maintenanceCalories - dailyDeficit);
+        String goal = inferGoal(request);
+        int dailyCalorieAdjustment = calculateDailyCalorieAdjustment(request, goal);
+        int signedAdjustment = signedAdjustment(dailyCalorieAdjustment, goal);
+        int calories = Math.max(1200, maintenanceCalories + signedAdjustment);
 
         int protein = (int) Math.round(request.getWeightKg() * 1.8);
         int fat = (int) Math.round((calories * 0.25) / 9);
         int carbs = Math.max(0, (int) Math.round((calories - protein * 4 - fat * 9) / 4.0));
 
-        return new Targets(maintenanceCalories, calories, dailyDeficit, protein, carbs, fat);
+        return new Targets(maintenanceCalories, calories, dailyCalorieAdjustment, protein, carbs, fat);
     }
 
-    private int calculateDailyDeficit(ProfileRequest request) {
-        if ("manual".equalsIgnoreCase(request.getTargetStrategy()) && request.getDailyDeficit() != null) {
-            return request.getDailyDeficit();
+    private int calculateDailyCalorieAdjustment(ProfileRequest request, String goal) {
+        if ("maintain".equals(goal)) {
+            return 0;
+        }
+
+        if ("manual".equalsIgnoreCase(request.getTargetStrategy()) && request.getDailyCalorieAdjustment() != null) {
+            return request.getDailyCalorieAdjustment();
         }
 
         if (
                 "timeline".equalsIgnoreCase(request.getTargetStrategy())
-                        && request.getTargetWeightKg() != null
                         && resolveDaysToTarget(request) != null
         ) {
-            double weightChangeKg = request.getWeightKg() - request.getTargetWeightKg();
-            int deficit = (int) Math.round((weightChangeKg * 7700) / resolveDaysToTarget(request));
-            return Math.max(-1000, Math.min(1000, deficit));
+            double weightChangeKg = Math.abs(request.getWeightKg() - request.getTargetWeightKg());
+            int adjustment = (int) Math.round((weightChangeKg * 7700) / resolveDaysToTarget(request));
+            return Math.max(0, Math.min(1000, adjustment));
         }
 
-        return switch (request.getGoal().toLowerCase()) {
-            case "lose" -> 400;
-            case "gain" -> -300;
+        return 0;
+    }
+
+    private String inferGoal(ProfileRequest request) {
+        int comparison = Double.compare(request.getTargetWeightKg(), request.getWeightKg());
+        if (comparison > 0) {
+            return "gain";
+        }
+        if (comparison < 0) {
+            return "lose";
+        }
+        return "maintain";
+    }
+
+    private int signedAdjustment(int dailyCalorieAdjustment, String goal) {
+        return switch (goal) {
+            case "lose" -> -dailyCalorieAdjustment;
+            case "gain" -> dailyCalorieAdjustment;
             default -> 0;
         };
     }
@@ -142,7 +162,7 @@ public class ProfileService {
                 .targetStrategy(profile.getTargetStrategy())
                 .daysToTarget(profile.getDaysToTarget())
                 .targetDate(profile.getTargetDate())
-                .dailyDeficit(profile.getDailyDeficit())
+                .dailyCalorieAdjustment(profile.getDailyCalorieAdjustment())
                 .maintenanceCalories(profile.getMaintenanceCalories())
                 .calorieTarget(profile.getCalorieTarget())
                 .proteinTarget(profile.getProteinTarget())
@@ -154,7 +174,7 @@ public class ProfileService {
     private record Targets(
             int maintenanceCalories,
             int calories,
-            int dailyDeficit,
+            int dailyCalorieAdjustment,
             int protein,
             int carbs,
             int fat

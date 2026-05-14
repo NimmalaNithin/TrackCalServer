@@ -33,6 +33,7 @@ public class DatabaseMigrationRunner implements ApplicationRunner {
         migrateUserReference("user_details");
         migrateUserReference("meals");
         migrateUserReference("analytics");
+        migrateDailyDeficitField();
     }
 
     private void renameCollection(String oldName, String newName) {
@@ -67,6 +68,28 @@ public class DatabaseMigrationRunner implements ApplicationRunner {
                     .set("userId", user.getId())
                     .unset("userEmail");
             mongoTemplate.updateFirst(documentQuery, update, collectionName);
+        }
+    }
+
+    private void migrateDailyDeficitField() {
+        if (!mongoTemplate.collectionExists("user_details")) {
+            return;
+        }
+
+        Query query = Query.query(Criteria.where("dailyDeficit").exists(true));
+        List<Document> documents = mongoTemplate.find(query, Document.class, "user_details");
+
+        for (Document document : documents) {
+            Object id = document.get("_id");
+            Object value = document.get("dailyDeficit");
+            Query documentQuery = Query.query(Criteria.where("_id").is(id));
+            Update update = new Update().unset("dailyDeficit");
+
+            if (!document.containsKey("dailyCalorieAdjustment") && value instanceof Number number) {
+                update.set("dailyCalorieAdjustment", Math.abs(number.intValue()));
+            }
+
+            mongoTemplate.updateFirst(documentQuery, update, "user_details");
         }
     }
 }
