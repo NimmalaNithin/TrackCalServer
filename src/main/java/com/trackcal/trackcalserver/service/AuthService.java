@@ -20,13 +20,9 @@ import com.trackcal.trackcalserver.repository.OAuthLoginTokenRepository;
 import com.trackcal.trackcalserver.repository.PendingRegistrationRepository;
 import com.trackcal.trackcalserver.repository.UserRepository;
 import com.trackcal.trackcalserver.security.JwtService;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DuplicateKeyException;
-import org.springframework.mail.MailException;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.LinkedMultiValueMap;
@@ -74,7 +70,7 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
 
     private final RestClient restClient;
-    private final ObjectProvider<JavaMailSender> mailSenderProvider;
+    private final OtpEmailSender otpEmailSender;
     private final SecureRandom secureRandom = new SecureRandom();
 
     @Value("${google.client-id:}")
@@ -95,9 +91,6 @@ public class AuthService {
     @Value("${app.registration-otp.resend-cooldown-seconds:60}")
     private long registrationOtpResendCooldownSeconds;
 
-    @Value("${spring.mail.username:}")
-    private String mailFromAddress;
-
     public AuthService(
             UserRepository userRepository,
             OAuthLoginTokenRepository oauthLoginTokenRepository,
@@ -105,7 +98,7 @@ public class AuthService {
             PasswordEncoder passwordEncoder,
             JwtService jwtService,
             AuthenticationManager authenticationManager,
-            ObjectProvider<JavaMailSender> mailSenderProvider
+            OtpEmailSender otpEmailSender
     ) {
         this.userRepository = userRepository;
         this.oauthLoginTokenRepository = oauthLoginTokenRepository;
@@ -113,7 +106,7 @@ public class AuthService {
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.authenticationManager = authenticationManager;
-        this.mailSenderProvider = mailSenderProvider;
+        this.otpEmailSender = otpEmailSender;
         this.restClient = RestClient.create();
     }
 
@@ -140,7 +133,7 @@ public class AuthService {
             pendingRegistration.setResendAvailableAt(resendAvailableAt);
 
             pendingRegistrationRepository.save(pendingRegistration);
-            sendRegistrationOtpEmail(normalizedEmail, otp);
+            otpEmailSender.sendRegistrationOtp(normalizedEmail, otp, registrationOtpExpirationMinutes);
 
             return new OtpResponse(
                     normalizedEmail,
@@ -177,7 +170,7 @@ public class AuthService {
         pendingRegistration.setOtpHash(hash(otp));
         pendingRegistration.setResendAvailableAt(resendAvailableAt);
         pendingRegistrationRepository.save(pendingRegistration);
-        sendRegistrationOtpEmail(normalizedEmail, otp);
+        otpEmailSender.sendRegistrationOtp(normalizedEmail, otp, registrationOtpExpirationMinutes);
 
         return new OtpResponse(
                 normalizedEmail,
@@ -433,29 +426,6 @@ public class AuthService {
 
     private String generateOtp() {
         return String.valueOf(OTP_MIN + secureRandom.nextInt(OTP_BOUND));
-    }
-
-    private void sendRegistrationOtpEmail(String email, String otp) {
-        JavaMailSender mailSender = mailSenderProvider.getIfAvailable();
-        if (mailSender == null || mailFromAddress == null || mailFromAddress.isBlank()) {
-            throw new OtpException("Email OTP is not configured");
-        }
-
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom(mailFromAddress);
-        message.setTo(email);
-        message.setSubject("Your Track Cal verification code");
-        message.setText("""
-                Your Track Cal verification code is %s.
-
-                This code expires in %d minutes. If you did not request this, you can ignore this email.
-                """.formatted(otp, registrationOtpExpirationMinutes));
-
-        try {
-            mailSender.send(message);
-        } catch (MailException ex) {
-            throw new OtpException("Unable to send OTP. Please try again later");
-        }
     }
 
     private long secondsUntil(Instant instant) {
