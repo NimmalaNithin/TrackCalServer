@@ -38,6 +38,7 @@ public class ProfileRequest {
     @Digits(integer = 3, fraction = 2, message = "Weight can have up to 2 decimal places")
     private Double weightKg;
 
+    @NotNull(message = "Target weight is required")
     @DecimalMin(value = "25.0", message = "Target weight must be at least 25 kg")
     @DecimalMax(value = "350.0", message = "Target weight must be realistic")
     @Digits(integer = 3, fraction = 2, message = "Target weight can have up to 2 decimal places")
@@ -45,9 +46,6 @@ public class ProfileRequest {
 
     @NotBlank(message = "Activity level is required")
     private String activityLevel;
-
-    @NotBlank(message = "Goal is required")
-    private String goal;
 
     @NotBlank(message = "Target strategy is required")
     private String targetStrategy;
@@ -59,7 +57,7 @@ public class ProfileRequest {
     @Future(message = "Target date must be in the future")
     private LocalDate targetDate;
 
-    @Min(value = -1000, message = "Daily deficit cannot be below -1000")
-    @Max(value = 1000, message = "Daily deficit cannot exceed 1000")
-    private Integer dailyDeficit;
+    @Min(value = 0, message = "Daily calorie adjustment cannot be negative")
+    @Max(value = 1000, message = "Daily calorie adjustment cannot exceed 1000")
+    private Integer dailyCalorieAdjustment;
 }

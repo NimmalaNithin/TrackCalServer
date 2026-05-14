@@ -33,7 +33,7 @@ public class UserProfile {
     private String targetStrategy;
     private Integer daysToTarget;
     private LocalDate targetDate;
-    private Integer dailyDeficit;
+    private Integer dailyCalorieAdjustment;
     private Integer maintenanceCalories;
     private Integer calorieTarget;
     private Integer proteinTarget;
