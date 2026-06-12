@@ -15,5 +15,6 @@ public class MealEntryResponse {
     private Integer calories;
     private Integer protein;
     private Integer carbs;
+    private Integer fiber;
     private Integer fat;
 }
