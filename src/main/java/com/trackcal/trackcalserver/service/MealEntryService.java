@@ -41,6 +41,7 @@ public class MealEntryService {
         int calories = meals.stream().mapToInt(MealEntryResponse::getCalories).sum();
         int protein = meals.stream().mapToInt(MealEntryResponse::getProtein).sum();
         int carbs = meals.stream().mapToInt(MealEntryResponse::getCarbs).sum();
+        int fiber = meals.stream().mapToInt(MealEntryResponse::getFiber).sum();
         int fat = meals.stream().mapToInt(MealEntryResponse::getFat).sum();
         Integer target = profileRepository.findByUserId(userId).map(UserProfile::getCalorieTarget).orElse(null);
 
@@ -50,6 +51,7 @@ public class MealEntryService {
                 .calories(calories)
                 .protein(protein)
                 .carbs(carbs)
+                .fiber(fiber)
                 .fat(fat)
                 .meals(meals)
                 .build();
@@ -65,6 +67,7 @@ public class MealEntryService {
                 .calories(request.getCalories())
                 .protein(defaultValue(request.getProtein()))
                 .carbs(defaultValue(request.getCarbs()))
+                .fiber(defaultValue(request.getFiber()))
                 .fat(defaultValue(request.getFat()))
                 .createdAt(Instant.now())
                 .build();
@@ -93,6 +96,7 @@ public class MealEntryService {
                 .calories(defaultValue(meal.getCalories()))
                 .protein(defaultValue(meal.getProtein()))
                 .carbs(defaultValue(meal.getCarbs()))
+                .fiber(defaultValue(meal.getFiber()))
                 .fat(defaultValue(meal.getFat()))
                 .build();
     }

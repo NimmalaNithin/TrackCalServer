@@ -14,6 +14,7 @@ public class DailySummaryResponse {
     private Integer calories;
     private Integer protein;
     private Integer carbs;
+    private Integer fiber;
     private Integer fat;
     private List<MealEntryResponse> meals;
 }
