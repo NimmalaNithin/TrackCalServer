@@ -1,6 +1,5 @@
 package com.trackcal.trackcalserver.controller;
 
-import com.trackcal.trackcalserver.dto.DailySummaryResponse;
 import com.trackcal.trackcalserver.dto.MealEntryRequest;
 import com.trackcal.trackcalserver.dto.MealEntryResponse;
 import com.trackcal.trackcalserver.service.MealEntryService;
@@ -19,6 +18,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/meals")
@@ -30,11 +30,11 @@ public class MealEntryController {
     }
 
     @GetMapping
-    public DailySummaryResponse getDailySummary(
+    public List<MealEntryResponse> getMeals(
             Authentication authentication,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
     ) {
-        return mealEntryService.getDailySummary(authentication.getName(), date);
+        return mealEntryService.getMeals(authentication.getName(), date);
     }
 
     @PostMapping

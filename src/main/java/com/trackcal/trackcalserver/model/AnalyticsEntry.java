@@ -28,5 +28,6 @@ public class AnalyticsEntry {
 
     private Double weightKg;
     private Integer exerciseCalories;
+    private Instant createdAt;
     private Instant updatedAt;
 }

@@ -124,6 +124,9 @@ public class AuthService {
 
             PendingRegistration pendingRegistration = pendingRegistrationRepository.findByEmail(normalizedEmail)
                     .orElseGet(PendingRegistration::new);
+            if (pendingRegistration.getCreatedAt() == null) {
+                pendingRegistration.setCreatedAt(now);
+            }
             pendingRegistration.setFirstName(request.getFirstName());
             pendingRegistration.setLastName(request.getLastName());
             pendingRegistration.setEmail(normalizedEmail);
@@ -131,6 +134,7 @@ public class AuthService {
             pendingRegistration.setOtpHash(hash(otp));
             pendingRegistration.setExpiresAt(expiresAt);
             pendingRegistration.setResendAvailableAt(resendAvailableAt);
+            pendingRegistration.setUpdatedAt(now);
 
             pendingRegistrationRepository.save(pendingRegistration);
             otpEmailSender.sendRegistrationOtp(normalizedEmail, otp, registrationOtpExpirationMinutes);
@@ -166,9 +170,11 @@ public class AuthService {
         }
 
         String otp = generateOtp();
-        Instant resendAvailableAt = Instant.now().plus(Duration.ofSeconds(registrationOtpResendCooldownSeconds));
+        Instant now = Instant.now();
+        Instant resendAvailableAt = now.plus(Duration.ofSeconds(registrationOtpResendCooldownSeconds));
         pendingRegistration.setOtpHash(hash(otp));
         pendingRegistration.setResendAvailableAt(resendAvailableAt);
+        pendingRegistration.setUpdatedAt(now);
         pendingRegistrationRepository.save(pendingRegistration);
         otpEmailSender.sendRegistrationOtp(normalizedEmail, otp, registrationOtpExpirationMinutes);
 
@@ -206,6 +212,8 @@ public class AuthService {
                     .password(pendingRegistration.getPassword())
                     .authProvider(LOCAL_PROVIDER)
                     .roles(List.of("ROLE_USER"))
+                    .createdAt(Instant.now())
+                    .updatedAt(Instant.now())
                     .build();
 
             User savedUser = userRepository.save(user);
@@ -315,6 +323,7 @@ public class AuthService {
         User user = userRepository.findByEmail(email)
                 .map(existingUser -> updateGoogleUser(existingUser, tokenInfo))
                 .orElseGet(() -> createGoogleUser(tokenInfo));
+        user.setUpdatedAt(Instant.now());
         User savedUser = userRepository.save(user);
         String token = jwtService.generateToken(savedUser.getEmail());
 
@@ -334,6 +343,8 @@ public class AuthService {
                 .lastName(response.getLastName())
                 .profilePictureUrl(response.getProfilePictureUrl())
                 .expiresAt(Instant.now().plus(OAUTH_LOGIN_CODE_TTL))
+                .createdAt(Instant.now())
+                .updatedAt(Instant.now())
                 .build());
         return oneTimeCode;
     }
@@ -460,6 +471,7 @@ public class AuthService {
     }
 
     private User createGoogleUser(GoogleTokenInfoResponse tokenInfo) {
+        Instant now = Instant.now();
         return User.builder()
                 .firstName(resolveFirstName(tokenInfo))
                 .lastName(resolveLastName(tokenInfo))
@@ -468,6 +480,8 @@ public class AuthService {
                 .providerId(tokenInfo.getSub())
                 .profilePictureUrl(tokenInfo.getPicture())
                 .roles(List.of("ROLE_USER"))
+                .createdAt(now)
+                .updatedAt(now)
                 .build();
     }
 
@@ -483,6 +497,9 @@ public class AuthService {
         user.setProfilePictureUrl(tokenInfo.getPicture());
         if (user.getRoles() == null || user.getRoles().isEmpty()) {
             user.setRoles(List.of("ROLE_USER"));
+        }
+        if (user.getCreatedAt() == null) {
+            user.setCreatedAt(Instant.now());
         }
         return user;
     }

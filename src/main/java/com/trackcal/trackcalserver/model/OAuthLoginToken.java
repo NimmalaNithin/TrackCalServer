@@ -28,4 +28,6 @@ public class OAuthLoginToken {
     private String lastName;
     private String profilePictureUrl;
     private Instant expiresAt;
+    private Instant createdAt;
+    private Instant updatedAt;
 }
