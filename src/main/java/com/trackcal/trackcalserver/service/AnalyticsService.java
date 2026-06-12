@@ -58,7 +58,11 @@ public class AnalyticsService {
         AnalyticsEntry entry = analyticsEntryRepository
                 .findByUserIdAndEntryDate(userId, request.getEntryDate())
                 .orElseGet(AnalyticsEntry::new);
+        Instant now = Instant.now();
 
+        if (entry.getCreatedAt() == null) {
+            entry.setCreatedAt(now);
+        }
         entry.setUserId(userId);
         entry.setEntryDate(request.getEntryDate());
         if (request.getWeightKg() != null) {
@@ -67,7 +71,7 @@ public class AnalyticsService {
         if (request.getExerciseCalories() != null) {
             entry.setExerciseCalories(request.getExerciseCalories());
         }
-        entry.setUpdatedAt(Instant.now());
+        entry.setUpdatedAt(now);
 
         return toResponse(analyticsEntryRepository.save(entry));
     }

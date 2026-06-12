@@ -7,5 +7,6 @@ import java.time.LocalDate;
 import java.util.List;
 
 public interface MealEntryRepository extends MongoRepository<MealEntry, String> {
-    List<MealEntry> findByUserIdAndEntryDateOrderByCreatedAtDesc(String userId, LocalDate entryDate);
+    List<MealEntry> findByUserIdAndEntryDate(String userId, String entryDate);
+    List<MealEntry> findByUserId(String userId);
 }

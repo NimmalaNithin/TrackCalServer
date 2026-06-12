@@ -34,4 +34,8 @@ public class PendingRegistration {
 
     @Indexed(expireAfter = "0s")
     private Instant expiresAt;
+
+    private Instant createdAt;
+
+    private Instant updatedAt;
 }

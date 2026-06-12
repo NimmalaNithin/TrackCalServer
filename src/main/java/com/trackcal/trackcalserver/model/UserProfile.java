@@ -39,5 +39,6 @@ public class UserProfile {
     private Integer proteinTarget;
     private Integer carbTarget;
     private Integer fatTarget;
+    private Instant createdAt;
     private Instant updatedAt;
 }

@@ -36,6 +36,10 @@ public class MealEntryRequest {
     @Max(value = 1000, message = "Carbs are too high")
     private Integer carbs;
 
+    @Min(value = 0, message = "Fiber cannot be negative")
+    @Max(value = 1000, message = "Fiber is too high")
+    private Integer fiber;
+
     @Min(value = 0, message = "Fat cannot be negative")
     @Max(value = 1000, message = "Fat is too high")
     private Integer fat;

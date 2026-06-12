@@ -55,7 +55,11 @@ public class ProfileService {
         String userId = currentUserService.requireUserId(email);
         Targets targets = calculateTargets(request);
         UserProfile profile = profileRepository.findByUserId(userId).orElseGet(UserProfile::new);
+        Instant now = Instant.now();
 
+        if (profile.getCreatedAt() == null) {
+            profile.setCreatedAt(now);
+        }
         profile.setUserId(userId);
         profile.setAge(request.getAge());
         profile.setSex(request.getSex());
@@ -73,7 +77,7 @@ public class ProfileService {
         profile.setProteinTarget(targets.protein());
         profile.setCarbTarget(targets.carbs());
         profile.setFatTarget(targets.fat());
-        profile.setUpdatedAt(Instant.now());
+        profile.setUpdatedAt(now);
 
         return toResponse(profileRepository.save(profile));
     }

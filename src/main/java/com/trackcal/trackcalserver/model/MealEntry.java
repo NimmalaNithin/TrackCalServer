@@ -24,13 +24,15 @@ public class MealEntry {
     private String userId;
 
     @Indexed
-    private LocalDate entryDate;
+    private String entryDate;
 
     private String name;
     private String mealType;
     private Integer calories;
     private Integer protein;
     private Integer carbs;
+    private Integer fiber;
     private Integer fat;
     private Instant createdAt;
+    private Instant updatedAt;
 }

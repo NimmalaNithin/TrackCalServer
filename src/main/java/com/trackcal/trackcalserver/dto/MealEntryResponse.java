@@ -11,9 +11,10 @@ public class MealEntryResponse {
     private String id;
     private String name;
     private String mealType;
-    private LocalDate entryDate;
+    private String entryDate;
     private Integer calories;
     private Integer protein;
     private Integer carbs;
+    private Integer fiber;
     private Integer fat;
 }
